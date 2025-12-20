@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.core import database
+
 
 app = FastAPI(
     title="Auth Test",
@@ -8,6 +10,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+
+# ToDo работа с таблицами (временно)
+@app.on_event("startup")
+async def startup_event():
+    await database.init_tables()
 
 
 @app.get("/")

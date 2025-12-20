@@ -21,3 +21,14 @@ async def get_db():
             yield session
         finally:
             await session.close()
+
+
+# ToDo работа с таблицами (временно)
+async def init_tables():
+    """Функция для пересоздания всех таблиц"""
+    async with engine.begin() as conn:
+        # Удаляем все таблицы
+        await conn.run_sync(Base.metadata.drop_all)
+        # Потом создаем
+        await conn.run_sync(Base.metadata.create_all)
+    print('Все таблицы пересозданы успешно!')
