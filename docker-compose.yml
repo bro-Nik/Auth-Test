@@ -1,12 +1,31 @@
 services:
 
+  auth_db:
+    image: postgres:13
+    container_name: auth_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   auth_app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: auth_app
+    environment:
+      DATABASE_URL: ${DB_URL}
     ports:
       - "8000:8000"
+    depends_on:
+      - auth_db
     volumes:
       - ./app:/app/app
     restart: unless-stopped
+
+volumes:
+  auth_db_data:
