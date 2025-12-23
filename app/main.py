@@ -1,3 +1,4 @@
+from app.api import auth
 from fastapi import FastAPI
 
 from app.core import database
@@ -10,6 +11,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+
+app.include_router(auth.router)
 
 
 # ToDo работа с таблицами (временно)
