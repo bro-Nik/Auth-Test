@@ -1,3 +1,4 @@
+from app.models.resource import Order, Product
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -179,6 +180,8 @@ async def populate_initial_data():
                 "role_code": "guest"
             }
         ]
+
+        users = {}
         for user_data in users_data:
             user = User(
                 email=user_data["email"],
@@ -187,6 +190,64 @@ async def populate_initial_data():
                 role_id=roles[user_data["role_code"]].id
             )
             session.add(user)
+
+            # Для привязки в товарах
+            users[user_data['role_code']] = user
+
+        await session.flush()
+
+        # Создаем товары
+        products_data = [
+            {
+                "owner_id": users['user'].id,
+                "name": "Product A"
+            },
+            {
+                "owner_id": users['user'].id,
+                "name": "Product B"
+            },
+            {
+                "owner_id": users['manager'].id,
+                "name": "Product C"
+            },
+            {
+                "owner_id": users['manager'].id,
+                "name": "Product D"
+            },
+        ]
+        for product_data in products_data:
+            product = Product(
+                owner_id=product_data["owner_id"],
+                name=product_data["name"],
+            )
+            session.add(product)
+
+        # Создаем заказы
+        orders_data = [
+            {
+                "owner_id": users['user'].id,
+                "status": "pending"
+            },
+            {
+                "owner_id": users['user'].id,
+                "status": "completed"
+            },
+            {
+                "owner_id": users['manager'].id,
+                "status": "completed"
+            },
+            {
+                "owner_id": users['manager'].id,
+                "status": "pending"
+            },
+        ]
+        for order_data in orders_data:
+            order = Order(
+                owner_id=order_data["owner_id"],
+                status=order_data["status"],
+            )
+            session.add(order)
+
 
         await session.commit()
         print('Начальные данные добавлены успешно!')
