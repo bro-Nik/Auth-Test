@@ -1,7 +1,7 @@
-from app.api import auth
 from fastapi import FastAPI
 
-from app.core import database
+from app.api import auth, user
+from app.temp_db_init import init_tables
 
 
 app = FastAPI(
@@ -14,12 +14,13 @@ app = FastAPI(
 
 
 app.include_router(auth.router)
+app.include_router(user.router)
 
 
 # ToDo работа с таблицами (временно)
 @app.on_event("startup")
 async def startup_event():
-    await database.init_tables()
+    await init_tables()
 
 
 @app.get("/")

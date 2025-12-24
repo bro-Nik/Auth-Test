@@ -38,7 +38,7 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     user = await crud.user.authenticate(
-        db, email=form_data.username, password=form_data.password
+        db, email=form_data.email, password=form_data.password
     )
     if not user:
         raise HTTPException(

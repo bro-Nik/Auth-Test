@@ -32,7 +32,7 @@ async def get_current_user(
         if user_id is None:
             raise UnauthorizedException(detail='Недействительный токен')
 
-        user = await crud.user.get(db, user_id=user_id)
+        user = await crud.user.get(db, user_id=int(user_id))
         if not user:
             raise UnauthorizedException(detail='Пользователь не найден')
 

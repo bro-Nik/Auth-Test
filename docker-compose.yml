@@ -19,6 +19,8 @@ services:
     container_name: auth_app
     environment:
       DB_URL: ${DB_URL}
+      JWT_SECRET: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
     ports:
       - "8000:8000"
     depends_on:
@@ -26,6 +28,14 @@ services:
     volumes:
       - ./app:/app/app
     restart: unless-stopped
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth_db
 
 volumes:
   auth_db_data:

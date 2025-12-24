@@ -1,7 +1,8 @@
 from typing import Optional
 
-from sqlalchemy import Integer, String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Integer, String, Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.core.database import Base
 
@@ -16,3 +17,11 @@ class User(Base):
     middle_name: Mapped[Optional[str]] = mapped_column(String)
     last_name: Mapped[Optional[str]] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+
+    # Relationships
+    role: Mapped["Role"] = relationship(back_populates="users")
+
+    @hybrid_property
+    def owner_id(self):
+        return self.id

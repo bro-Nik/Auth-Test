@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,24 +6,26 @@ from sqlalchemy import select
 from app.core import security
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
+from app.crud.permission import get_default_user_role_id
 
 
 async def get(
     db: AsyncSession,
     *,
     email: Optional[str] = None,
-    id: Optional[int] = None
+    user_id: Optional[int] = None
 ) -> Optional[User]:
     if email:
         result = await db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
-    if id:
-        result = await db.execute(select(User).where(User.id == id))
+    if user_id:
+        result = await db.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
 
 async def create(db: AsyncSession, *, user_data: UserCreate) -> User:
     hashed_password = security.get_password_hash(user_data.password)
+    role_id = await get_default_user_role_id(db)
 
     user = User(
         email=user_data.email,
@@ -32,6 +34,7 @@ async def create(db: AsyncSession, *, user_data: UserCreate) -> User:
         middle_name=user_data.middle_name,
         last_name=user_data.last_name,
         is_active=True,
+        role_id=role_id
     )
 
     db.add(user)
@@ -43,9 +46,13 @@ async def create(db: AsyncSession, *, user_data: UserCreate) -> User:
 async def update(
     db: AsyncSession,
     *,
-    db_user: User,
+    user_id: int,
     update_data: UserUpdate
-) -> User:
+) -> Optional[User]:
+    user = await get(db, user_id=user_id)
+    if not user:
+        return None
+
     update_data = update_data.model_dump(exclude_unset=True)
 
     # Обновление хэша пароля
@@ -59,13 +66,13 @@ async def update(
 
     # Обновление
     for field in update_data:
-        if hasattr(db_user, field) and field != 'id':
-            setattr(db_user, field, update_data[field])
+        if hasattr(user, field) and field != 'id':
+            setattr(user, field, update_data[field])
 
-    db.add(db_user)
+    db.add(user)
     await db.commit()
-    await db.refresh(db_user)
-    return db_user
+    await db.refresh(user)
+    return user
 
 
 async def authenticate(
@@ -83,10 +90,21 @@ async def authenticate(
 
 
 async def soft_delete(db: AsyncSession, *, user_id: int) -> User:
-    user = await get(db, id=user_id)
+    user = await get(db, user_id=user_id)
     if user:
         user.is_active = False
         db.add(user)
         await db.commit()
         await db.refresh(user)
     return user
+
+
+async def get_all(db, skip: int = 0, limit: Optional[int] = None) -> List[User]:
+    query = select(User)
+    if skip:
+        query = query.offset(skip)
+    if limit:
+        query = query.limit(limit)
+
+    result = await db.execute(query)
+    return result.scalars().all()

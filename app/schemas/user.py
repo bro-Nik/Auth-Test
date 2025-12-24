@@ -13,6 +13,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    id: int
     email: Optional[EmailStr] = None
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
@@ -24,3 +25,13 @@ class UserUpdate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserResponse(BaseModel):
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
