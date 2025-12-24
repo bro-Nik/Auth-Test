@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.core.permissions import PermissionChecker
-from app import dependencies, models
+from app import crud, dependencies, models
 
 
 router = APIRouter(prefix="/api/order", tags=["order"])
@@ -24,9 +23,9 @@ async def get_all(
     # Строим запрос с фильтрацией
     stmt = await checker.apply_scope_filter(models.Order)
     result = await db.execute(stmt)
-    products = result.scalars().all()
+    orders = result.scalars().all()
 
-    return products
+    return orders
 
 
 @router.get("/{order_id}")
@@ -35,8 +34,7 @@ async def get_order(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Order).where(models.Order.id == order_id))
-    order = result.scalar_one_or_none()
+    order = await crud.order.get(db, order_id)
     if not order:
         raise NotFoundException(detail="Заказ не найден")
 
@@ -48,6 +46,23 @@ async def get_order(
     return order
 
 
+@router.post("/{order_id}")
+async def create_order(
+    form_data: dict,
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Проверка прав доступа
+    checker = PermissionChecker(db, current_user, 'orders', 'create')
+    if not await checker.check_permission():
+        raise ForbiddenException(detail='Нет разрешения на изменение этого заказа')
+
+    # Логика создания
+    order = await crud.order.create(db, user_id=current_user.id, order_data=form_data)
+
+    return order
+
+
 @router.put("/{order_id}")
 async def update_order(
     order_id:int,
@@ -55,8 +70,7 @@ async def update_order(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Order).where(models.Order.id == order_id))
-    order = result.scalar_one_or_none()
+    order = await crud.order.get(db, order_id)
     if not order:
         raise NotFoundException(detail="Заказ не найден")
 
@@ -66,6 +80,7 @@ async def update_order(
         raise ForbiddenException(detail='Нет разрешения на изменение этого заказа')
 
     # Логика обновления
+    order = await crud.order.update(db, order_id=order_id, update_data=form_data)
 
     return order
 
@@ -76,8 +91,7 @@ async def delete_order(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Order).where(models.Order.id == order_id))
-    order = result.scalar_one_or_none()
+    order = await crud.order.get(db, order_id)
     if not order:
         raise NotFoundException(detail="Заказ не найден")
 
@@ -87,5 +101,6 @@ async def delete_order(
         raise ForbiddenException(detail='Нет разрешения на удаление этого заказа')
 
     # Логика удаления
+    await crud.order.delete(db, order_id=order_id)
 
     return {'message': 'Заказ удален'}

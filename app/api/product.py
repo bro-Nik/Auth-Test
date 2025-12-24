@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.core.permissions import PermissionChecker
-from app import dependencies, models
+from app import crud, dependencies, models
 
 
 router = APIRouter(prefix="/api/product", tags=["product"])
@@ -35,8 +34,7 @@ async def get_product(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Product).where(models.Product.id == product_id))
-    product = result.scalar_one_or_none()
+    product = await crud.product.get(db, product_id)
     if not product:
         raise NotFoundException(detail="Товар не найден")
 
@@ -48,6 +46,23 @@ async def get_product(
     return product
 
 
+@router.post("/{product_id}")
+async def create_product(
+    form_data: dict,
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Проверка прав доступа
+    checker = PermissionChecker(db, current_user, 'products', 'create')
+    if not await checker.check_permission():
+        raise ForbiddenException(detail='Нет разрешения на изменение этого товара')
+
+    # Логика создания
+    product = await crud.product.create(db, user_id=current_user.id, product_data=form_data)
+
+    return product
+
+
 @router.put("/{product_id}")
 async def update_product(
     product_id:int,
@@ -55,8 +70,7 @@ async def update_product(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Product).where(models.Product.id == product_id))
-    product = result.scalar_one_or_none()
+    product = await crud.product.get(db, product_id)
     if not product:
         raise NotFoundException(detail="Товар не найден")
 
@@ -66,6 +80,7 @@ async def update_product(
         raise ForbiddenException(detail='Нет разрешения на изменение этого товара')
 
     # Логика обновления
+    product = await crud.product.update(db, product_id=product_id, update_data=form_data)
 
     return product
 
@@ -76,8 +91,7 @@ async def delete_product(
     current_user: models.User = Depends(dependencies.get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(models.Product).where(models.Product.id == product_id))
-    product = result.scalar_one_or_none()
+    product = await crud.product.get(db, product_id)
     if not product:
         raise NotFoundException(detail="Товар не найден")
 
@@ -87,5 +101,6 @@ async def delete_product(
         raise ForbiddenException(detail='Нет разрешения на удаление этого товара')
 
     # Логика удаления
+    await crud.product.delete(db, product_id=product_id)
 
     return {'message': 'Товар удален'}
