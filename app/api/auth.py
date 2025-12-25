@@ -1,3 +1,4 @@
+from app.core.exceptions import BadRequestException, ForbiddenException, UnauthorizedException
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,22 +15,18 @@ async def register(
     form_data: schemas.UserCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    # Проверка на существование пользователя
     # ToDo Что, если пользователь удалился и хочет восстановиться?
-    user = await crud.user.get(db, email=form_data.email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="Пользователь с таким Email уже существует",
-        )
+    try:
+        # Создаем пользователя
+        user = await crud.user.create(db, user_data=form_data)
 
-    # Создаем пользователя
-    user = await crud.user.create(db, user_data=form_data)
+        # Создаем токен
+        access_token = security.create_access_token(user)
 
-    # Создаем токен
-    access_token = security.create_access_token(user)
+        return schemas.AccessToken(access_token=access_token)
 
-    return schemas.AccessToken(access_token=access_token)
+    except ValueError as e:
+        raise BadRequestException(detail=str(e))
 
 
 @router.post("/login", response_model=schemas.AccessToken)
@@ -37,24 +34,22 @@ async def login(
     form_data: schemas.UserLogin,
     db: AsyncSession = Depends(get_db)
 ):
-    user = await crud.user.authenticate(
-        db, email=form_data.email, password=form_data.password
-    )
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Не корректный Email или пароль",
+    try:
+        user = await crud.user.authenticate(
+            db, email=form_data.email, password=form_data.password
         )
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь удален",
-        )
+        if not user:
+            raise UnauthorizedException(detail="Не корректный Email или пароль")
+        if not user.is_active:
+            raise BadRequestException(detail="Пользователь удален")
 
-    # Создаем токен
-    access_token = security.create_access_token(user)
+        # Создаем токен
+        access_token = security.create_access_token(user)
 
-    return schemas.AccessToken(access_token=access_token)
+        return schemas.AccessToken(access_token=access_token)
+
+    except ValueError as e:
+        raise BadRequestException(detail=str(e))
 
 
 @router.post("/logout")
