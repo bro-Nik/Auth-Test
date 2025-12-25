@@ -1,0 +1,7 @@
+pytest
+pytest-asyncio
+httpx
+sqlalchemy
+aiosqlite
+pytest-cov
+pytest-xdist

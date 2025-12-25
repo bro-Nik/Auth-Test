@@ -1,0 +1,20 @@
+FROM python:3.13
+
+WORKDIR /app
+
+# Копируем requirements
+COPY requirements.txt .
+COPY requirements-test.txt .
+
+# Устанавливаем зависимости
+RUN pip install -r requirements.txt && \
+    pip install -r requirements-test.txt
+
+# Копируем код приложения
+COPY . .
+
+# Создаем директорию для результатов тестов
+RUN mkdir -p /app/test-results
+
+# Команда по умолчанию (переопределяется в docker-compose)
+CMD ["python", "-m", "pytest", "tests/", "-v"]

@@ -1,0 +1,18 @@
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: auth_tests
+    environment:
+      DB_URL: sqlite+aiosqlite:///:memory
+      JWT_SECRET: test-secret-key-for-testing-only
+      JWT_ALGORITHM: HS256
+    volumes:
+      - ./tests:/app/tests
+      - ./app:/app/app
+      - ./test-results:/app/test-results
+    command: python -m pytest tests/ -v --tb=short --junitxml=/app/test-results/results.xml
+
+volumes:
+  test-results:
