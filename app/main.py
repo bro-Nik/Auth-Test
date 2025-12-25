@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import auth, user, order, product
+from app.api import auth, user, order, product, permission
 from app.temp_db_init import init_tables
 
 
@@ -17,6 +17,7 @@ app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(product.router)
 app.include_router(order.router)
+app.include_router(permission.router)
 
 
 # ToDo работа с таблицами (временно)

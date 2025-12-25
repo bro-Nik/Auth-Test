@@ -1,6 +1,15 @@
 from fastapi import HTTPException, status
 
 
+class BadRequestException(HTTPException):
+    """400 - Неверный запрос"""
+    def __init__(self, detail: str = 'Неверный запрос'):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail
+        )
+
+
 class UnauthorizedException(HTTPException):
     """401 - Не авторизован"""
     def __init__(self, detail: str = 'Необходима авторизация'):

@@ -1,1 +1,1 @@
-from . import user, order, product
+from . import user, order, product, permission
