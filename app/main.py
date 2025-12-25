@@ -1,7 +1,14 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import auth, user, order, product, permission
 from app.temp_db_init import init_tables
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_tables()
+    yield
 
 
 app = FastAPI(
@@ -9,7 +16,8 @@ app = FastAPI(
     description="Authentication and Authorization System",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 
@@ -18,12 +26,6 @@ app.include_router(user.router)
 app.include_router(product.router)
 app.include_router(order.router)
 app.include_router(permission.router)
-
-
-# ToDo работа с таблицами (временно)
-@app.on_event("startup")
-async def startup_event():
-    await init_tables()
 
 
 @app.get("/")

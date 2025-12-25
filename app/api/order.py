@@ -46,7 +46,7 @@ async def get_order(
     return order
 
 
-@router.post("/{order_id}")
+@router.post("/")
 async def create_order(
     form_data: dict,
     current_user: models.User = Depends(dependencies.get_current_user),

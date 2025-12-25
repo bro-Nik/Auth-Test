@@ -46,7 +46,7 @@ async def get_product(
     return product
 
 
-@router.post("/{product_id}")
+@router.post("/")
 async def create_product(
     form_data: dict,
     current_user: models.User = Depends(dependencies.get_current_user),

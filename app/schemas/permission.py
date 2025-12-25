@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 
@@ -8,8 +8,7 @@ class RoleResponse(BaseModel):
     code: str
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PermissionResponse(BaseModel):
@@ -18,8 +17,7 @@ class PermissionResponse(BaseModel):
     name: str
     scope: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ResourceResponse(BaseModel):
@@ -27,8 +25,7 @@ class ResourceResponse(BaseModel):
     code: str
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RuleBase(BaseModel):
@@ -52,5 +49,4 @@ class RuleResponse(RuleBase):
     permission: PermissionResponse
     resource: Optional[ResourceResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

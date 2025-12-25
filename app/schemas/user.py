@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict, ValidationInfo
 
 
 class UserCreate(BaseModel):
@@ -11,6 +11,13 @@ class UserCreate(BaseModel):
     password: str
     password_confirm: str
 
+    @field_validator('password_confirm')
+    @classmethod
+    def passwords_match(cls, v, info: ValidationInfo):
+        if 'password' in info.data and v != info.data['password']:
+            raise ValueError('Пароли не совпадают')
+        return v
+
 
 class UserUpdate(BaseModel):
     id: int
@@ -20,6 +27,13 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     password: Optional[str] = None
     password_confirm: Optional[str] = None
+
+    @field_validator('password_confirm')
+    @classmethod
+    def passwords_match(cls, v, info: ValidationInfo):
+        if 'password' in info.data and v != info.data['password']:
+            raise ValueError('Пароли не совпадают')
+        return v
 
 
 class UserLogin(BaseModel):
@@ -33,5 +47,4 @@ class UserResponse(BaseModel):
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

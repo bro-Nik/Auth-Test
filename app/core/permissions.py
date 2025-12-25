@@ -174,6 +174,8 @@ class PermissionChecker:
 
         return "none"  # Нет доступа
 
+    # В текущей реализации оставлю так
+    # Но в идеале сделать запрос на основании scope через сервис -> репозиторий
     async def apply_scope_filter(
         self,
         resource_model: Type[Any],
